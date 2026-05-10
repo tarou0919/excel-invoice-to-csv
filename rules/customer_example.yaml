@@ -1,0 +1,104 @@
+# ===============================================
+# カスタマー独自フォーマット例
+# ===============================================
+# 使い方:
+#   python src/main.py --rules rules/customer_example.yaml
+#
+# このファイルは、特定の取引先・自社独自フォーマット用の
+# 抽出ルールを定義する例です。
+# default.yaml をコピーして、必要に応じてカスタマイズしてください。
+# ===============================================
+
+extraction_rules:
+  請求書番号:
+    labels:
+      - 伝票番号        # ← 顧客独自の呼び方
+      - Document No
+    direction: right
+    data_type: text
+
+  発行日:
+    labels:
+      - 起票日          # ← 「発行日」ではなく「起票日」を使う
+    direction: right
+    data_type: date
+
+  支払期限:
+    labels:
+      - 振込予定日
+      - 入金予定日
+    direction: right
+    data_type: date
+
+  取引先名:
+    labels:
+      - 取引先
+      - 顧客名
+    direction: right_or_below
+    data_type: text
+
+  件名:
+    labels:
+      - 摘要            # ← 「件名」ではなく「摘要」
+      - 内容
+    direction: right
+    data_type: text
+
+  合計金額:
+    labels:
+      - 金額合計
+      - 請求総額
+    direction: right
+    data_type: number
+
+  小計:
+    labels:
+      - 純額
+      - 本体価格
+    direction: right
+    data_type: number
+
+  消費税:
+    labels:
+      - 税額
+    direction: right
+    data_type: number
+
+  # 独自項目を追加することも可能
+  担当部署:
+    labels:
+      - 担当部署
+      - 部門
+    direction: right
+    data_type: text
+
+  プロジェクトコード:
+    labels:
+      - プロジェクトコード
+      - PJコード
+      - 案件番号
+    direction: right
+    data_type: text
+
+
+# CSV出力列も自由に変更可能
+csv_columns:
+  - ファイル名
+  - 請求書番号
+  - 発行日
+  - 取引先名
+  - 担当部署              # ← 独自項目もCSVに出力
+  - プロジェクトコード     # ← 同上
+  - 件名
+  - 小計
+  - 消費税
+  - 合計金額
+  - 支払期限
+
+
+fallback:
+  customer_honorific_keywords:
+    - 御中
+    - 様
+  total_use_max_amount: true
+  total_calculate_from_subtotal: true

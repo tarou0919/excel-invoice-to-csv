@@ -1,0 +1,128 @@
+# ===============================================
+# Excel請求書 抽出ルール (デフォルト)
+# ===============================================
+# このファイルを編集することで、抽出する項目や
+# 探すラベル(キーワード)をカスタマイズできます。
+#
+# 各項目の設定:
+#   labels:    Excel上で探すラベル候補(複数指定可)
+#   direction: 値を取得する方向
+#              "right"          - ラベルの右隣
+#              "below"          - ラベルの下
+#              "right_or_below" - 両方を試す
+#   data_type: 値の型
+#              "text"   - 文字列
+#              "number" - 数値(¥や,は自動除去)
+#              "date"   - 日付(YYYY-MM-DDに正規化)
+# ===============================================
+
+extraction_rules:
+  請求書番号:
+    labels:
+      - 請求書番号
+      - Invoice No
+      - "No."
+      - 請求No
+      - 番号
+    direction: right
+    data_type: text
+
+  発行日:
+    labels:
+      - 発行日
+      - 請求日
+      - Issue Date
+      - Date
+      - 日付
+    direction: right
+    data_type: date
+
+  支払期限:
+    labels:
+      - 支払期限
+      - 支払期日
+      - お支払期限
+      - お支払期日
+      - Due Date
+    direction: right
+    data_type: date
+
+  取引先名:
+    labels:
+      - 取引先名
+      - 請求先
+      - 宛先
+      - Bill To
+      - お得意様
+    direction: right_or_below
+    data_type: text
+
+  件名:
+    labels:
+      - 件名
+      - Subject
+      - 業務内容
+    direction: right
+    data_type: text
+
+  合計金額:
+    labels:
+      - 合計金額
+      - ご請求金額
+      - 請求金額
+      - 合計
+      - Total
+      - 合計(税込)
+    direction: right
+    data_type: number
+
+  小計:
+    labels:
+      - 小計
+      - Subtotal
+      - 税抜金額
+    direction: right
+    data_type: number
+
+  消費税:
+    labels:
+      - 消費税
+      - 消費税(10%)
+      - "消費税(10%)"
+      - 税額
+      - Tax
+      - VAT
+    direction: right
+    data_type: number
+
+
+# ===============================================
+# CSV出力時の列順
+# ===============================================
+csv_columns:
+  - ファイル名
+  - 請求書番号
+  - 発行日
+  - 取引先名
+  - 件名
+  - 小計
+  - 消費税
+  - 合計金額
+  - 支払期限
+
+
+# ===============================================
+# フォールバック設定
+# ===============================================
+# ラベルが見つからなかった場合の代替手段
+fallback:
+  # 取引先名:「御中」「様」を含むセルから抽出
+  customer_honorific_keywords:
+    - 御中
+    - 様
+
+  # 合計金額:数値セルの最大値から抽出
+  total_use_max_amount: true
+
+  # 合計金額が無い場合、小計+消費税で計算
+  total_calculate_from_subtotal: true

@@ -6,6 +6,17 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![openpyxl](https://img.shields.io/badge/openpyxl-3.1.5-green.svg)](https://openpyxl.readthedocs.io/)
+[![Version](https://img.shields.io/badge/version-2.0-blue.svg)](https://github.com/tarou0919/excel-invoice-to-csv/releases)
+
+---
+
+## 🆕 v2.0 の新機能
+
+- 🎨 **YAMLルール外部化** — メモ帳で抽出ルールを編集可能(Pythonの知識不要)
+- 🔀 **複数ルールの切り替え** — 顧客ごとに専用ルールファイルを使い分け
+- 🛡️ **堅牢なエラー処理** — 壊れたExcelが混在しても止まらない
+- 📝 **詳細ログ出力** — `--verbose` でデバッグ可能、`--log-file` で記録
+- ✨ **独自項目の追加** — 「担当部署」「PJコード」など自由に追加可能
 
 ---
 
@@ -30,7 +41,7 @@
    フォーマット混在OK              1つのCSVに集約
 ```
 
-### 抽出される項目(9項目)
+### 抽出される項目(デフォルト9項目・カスタマイズ可能)
 
 | # | 項目 | 例 |
 |---|------|-----|
@@ -73,6 +84,12 @@
 ### ✅ Excel互換CSV出力
 `UTF-8 BOM` 付きで、Excelで開いても文字化けしません。
 
+### 🆕 ✅ YAMLルール外部化
+抽出ルールが `rules/default.yaml` に分離。メモ帳で編集できます。
+
+### 🆕 ✅ エラーに強い
+壊れたExcelが混じっていてもスキップして継続。エラーは記録されます。
+
 ---
 
 ## 🚀 使い方(3ステップ)
@@ -111,40 +128,42 @@ excel-invoice-to-csv/
 python src\main.py
 ```
 
-実行結果:
-
-```
-📂 入力フォルダ: C:\dev\excel-invoice-to-csv\samples
-📄 出力CSV: C:\dev\excel-invoice-to-csv\output\invoices.csv
-
-🔍 3 件のExcelファイルを処理します...
-
-[1/3] pattern_a_simple.xlsx
-        請求書番号: INV-2025-0042
-        取引先: 株式会社サンプル商事 御中
-        合計: ¥1,540,000
-[2/3] pattern_b_table.xlsx
-        請求書番号: 2025-Q4-117
-        取引先: 合同会社ベータ工業
-        合計: ¥308,000
-[3/3] pattern_c_complex.xlsx
-        請求書番号: C-2025-1108
-        取引先: 株式会社ガンマ流通 経理部 御中
-        合計: ¥1,144,000
-
-==================================================
-✅ 完了: C:\dev\excel-invoice-to-csv\output\invoices.csv
-   処理件数: 3 件
-   主要項目取得成功: 3 / 3 件
-==================================================
-```
-
 `output/invoices.csv` に集約されたCSVが出力されます。
 
-### 💡 カスタムパスでの実行
+---
+
+## 🔧 高度な使い方
+
+### カスタムパス指定
 
 ```bash
 python src\main.py "C:\path\to\input_dir" "C:\path\to\output.csv"
+```
+
+### 🆕 顧客ごとに専用ルールを使う
+
+```bash
+# A社専用ルール
+python src\main.py --rules rules\customer_a.yaml
+
+# B社専用ルール
+python src\main.py samples\b_company\ output\b_company.csv --rules rules\customer_b.yaml
+```
+
+### 🆕 詳細ログを表示(デバッグ用)
+
+```bash
+# 画面に詳細ログ表示
+python src\main.py --verbose
+
+# ファイルに詳細ログ保存
+python src\main.py --verbose --log-file logs\run.log
+```
+
+### 🆕 ヘルプ表示
+
+```bash
+python src\main.py --help
 ```
 
 ---
@@ -175,17 +194,21 @@ python src\main.py "C:\path\to\input_dir" "C:\path\to\output.csv"
 
 ```
 excel-invoice-to-csv/
-├── samples/              # 入力Excelファイル(.xlsx)
+├── samples/                      # 入力Excelファイル(.xlsx)
 │   ├── pattern_a_simple.xlsx
 │   ├── pattern_b_table.xlsx
 │   └── pattern_c_complex.xlsx
-├── src/                  # ソースコード
-│   ├── config.py         # 抽出ルール定義
-│   ├── extractor.py      # Excel抽出コア(ラベル探索)
-│   ├── csv_writer.py     # CSV出力
-│   └── main.py           # エントリーポイント
-├── output/               # 生成されるCSV
+├── rules/                        # 🆕 抽出ルール(YAML)
+│   ├── default.yaml              # デフォルトルール
+│   └── customer_example.yaml     # カスタマイズ例
+├── src/                          # ソースコード
+│   ├── rules_loader.py           # 🆕 YAMLルール読込
+│   ├── extractor.py              # Excel抽出コア
+│   ├── csv_writer.py             # CSV出力
+│   └── main.py                   # エントリーポイント
+├── output/                       # 生成されるCSV
 │   └── invoices.csv
+├── logs/                         # 🆕 ログファイル(--log-file使用時)
 ├── docs/
 │   └── images/
 ├── requirements.txt
@@ -195,27 +218,56 @@ excel-invoice-to-csv/
 
 ---
 
-## 🔧 抽出項目のカスタマイズ
+## 🔧 抽出ルールのカスタマイズ
 
-`src/config.py` で抽出するラベルを追加できます。
+### 既存ルールの編集
 
-```python
-EXTRACTION_RULES = {
-    "請求書番号": {
-        "labels": ["請求書番号", "Invoice No", "No.", "請求No"],  # ← ここに追加
-        "direction": "right",
-        "data_type": "text",
-    },
-    # 新しい項目を追加することも可能
-    "担当者": {
-        "labels": ["担当者", "Contact"],
-        "direction": "right",
-        "data_type": "text",
-    },
-}
+`rules/default.yaml` をメモ帳などで開いて編集します:
+
+```yaml
+extraction_rules:
+  請求書番号:
+    labels:
+      - 請求書番号       # ← ここに自社で使われている呼び方を追加
+      - Invoice No
+      - 伝票番号        # ← 例:このように追加
+    direction: right
+    data_type: text
 ```
 
-`CSV_COLUMNS` に追加した項目を加えれば、出力CSVにも反映されます。
+### 新しい項目の追加
+
+```yaml
+extraction_rules:
+  # ... 既存の項目 ...
+
+  # 独自項目を追加
+  担当部署:
+    labels:
+      - 担当部署
+      - 部門
+    direction: right
+    data_type: text
+
+csv_columns:
+  - ファイル名
+  - 請求書番号
+  - 担当部署              # ← CSV出力にも追加
+  # ... 他の項目 ...
+```
+
+### 顧客ごとに別ファイルを作る
+
+```bash
+# A社専用ルール作成
+copy rules\default.yaml rules\customer_a.yaml
+# rules\customer_a.yaml を編集してA社専用に
+
+# A社の請求書だけ処理
+python src\main.py samples\a_company --rules rules\customer_a.yaml
+```
+
+詳しいカスタマイズ例は [`rules/customer_example.yaml`](rules/customer_example.yaml) を参照。
 
 ---
 
@@ -223,7 +275,8 @@ EXTRACTION_RULES = {
 
 - **Python 3.10+**
 - **openpyxl 3.1.5** — Excelファイル読み込み
-- **pandas 2.0+** — データ処理(オプション)
+- **PyYAML 6.0+** — 🆕 YAMLルールファイル解析
+- **pandas 2.0+** — データ処理
 - **python-dotenv** — 環境変数管理
 
 ---
@@ -254,6 +307,7 @@ EXTRACTION_RULES = {
 - 弥生会計・freee・MFクラウド向けCSVフォーマット出力
 - 明細行レベルでの抽出
 - メール添付Excelの自動取り込み
+- 月次自動実行(タスクスケジューラ連携)
 
 ---
 
@@ -271,5 +325,21 @@ EXTRACTION_RULES = {
 
 ---
 
-⭐ お役に立ったらStarをお願いします!
+## 📝 変更履歴
 
+### v2.0 (2026-05-11)
+- 🆕 YAMLルール外部化
+- 🆕 CLI引数対応(`--rules`, `--verbose`, `--log-file`)
+- 🆕 エラー処理強化(壊れたExcelで止まらない)
+- 🆕 詳細ログ機能
+
+### v1.0 (2026-05-10)
+- 🎉 初回リリース
+- ✅ 3種類のフォーマット対応
+- ✅ ラベル探索方式
+- ✅ 結合セル対応
+- ✅ 多段フォールバック
+
+---
+
+⭐ お役に立ったらStarをお願いします!
